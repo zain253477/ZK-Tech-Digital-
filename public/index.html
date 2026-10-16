@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK-Tech Digital - WhatsApp AI Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen p-6 font-sans">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <header class="flex justify-between items-center border-b border-gray-800 pb-4">
+            <h1 class="text-2xl font-bold text-emerald-400">⚡ ZK-Tech Digital - WhatsApp AI</h1>
+            <span id="status-badge" class="px-3 py-1 rounded-full text-sm font-semibold bg-red-900 text-red-300">Disconnected</span>
+        </header>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 text-center space-y-4">
+                <h2 class="text-lg font-semibold text-gray-200">Scan QR Code</h2>
+                <div id="qr-container" class="flex justify-center items-center min-h-[200px]">
+                    <p class="text-gray-500 text-sm">Waiting for QR generation...</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 space-y-4">
+                <h2 class="text-lg font-semibold text-gray-200">8-Digit Pairing Code</h2>
+                <p class="text-xs text-gray-400">Enter number (e.g. 92300268850925)</p>
+                <input type="text" id="phone-input" placeholder="92300268850925" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">
+                <button onclick="getPairingCode()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition">Generate Pairing Code</button>
+                <div id="pairing-code-display" class="text-center text-xl font-mono text-emerald-400 font-bold tracking-widest pt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/whatsapp/status');
+                const data = await res.json();
+                const badge = document.getElementById('status-badge');
+                badge.textContent = data.status;
+                badge.className = data.isConnected ? 'px-3 py-1 rounded-full text-sm font-semibold bg-emerald-900 text-emerald-300' : 'px-3 py-1 rounded-full text-sm font-semibold bg-yellow-900 text-yellow-300';
+
+                if (data.qrCode) {
+                    document.getElementById('qr-container').innerHTML = `<img src="${data.qrCode}" class="w-48 h-48 bg-white p-2 rounded-lg mx-auto" />`;
+                }
+                if (data.pairingCode) {
+                    document.getElementById('pairing-code-display').textContent = data.pairingCode;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function getPairingCode() {
+            const phone = document.getElementById('phone-input').value;
+            if (!phone) return alert('Enter phone number');
+            const res = await fetch('/api/whatsapp/pairing-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone })
+            });
+            const data = await res.json();
+            if(data.success) alert('Pairing code requested successfully!');
+            else alert('Error: ' + data.error);
+        }
+
+        setInterval(fetchStatus, 3000);
+        fetchStatus();
+    </script>
+</body>
+  </html>
+  
